@@ -132,7 +132,7 @@ def isolate_field(image, panoptic_cfg, panoptic_predictor):
         if(info['category_id'] == 0):  # person
             max_person_area = max(max_person_area, info['area'])
 
-    dilate_size = round(np.sqrt(max_person_area)*1.5)
+    dilate_size = round(np.sqrt(max_person_area)*2)
     erode_size = round(np.sqrt(max_person_area)/2)
 
     dilate_box = np.ones((dilate_size, dilate_size))
