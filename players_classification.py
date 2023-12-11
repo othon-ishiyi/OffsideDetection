@@ -1,4 +1,4 @@
-#Add directory to path
+#Add detectron2 directory to path
 import os, sys
 sys.path.insert(0, os.path.abspath('./detectron2'))
 
@@ -79,6 +79,38 @@ class players_classification:
 
         return im
 
+def remove_blobs(mask):
+    '''
+    mask: imagem com um canal de cor. O valor desse canal é:
+        255 se for região de campo
+        0 se não for campo
+
+    A função retorna uma mask modificada removendo blobs indesejados detectados originalmente como campo
+    '''
+    mask_with_border = mask.copy()
+    height, width = mask.shape
+
+    #Create a board for the image
+    for y in range(height):
+        mask_with_border[y,0] = 0
+        mask_with_border[y,-1] = 0
+    for x in range(width):
+        mask_with_border[0,x] = 0
+        mask_with_border[-1,x] = 0
+    
+    contours, _ = cv2.findContours(mask_with_border, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    # Calculate areas of blobs
+    areas = [cv2.contourArea(cnt) for cnt in contours]
+
+    # Find the index of the largest blob
+    max_index = np.argmax(areas)
+
+    # Create a binary mask
+    result = np.zeros_like(mask)
+    cv2.drawContours(result, contours, max_index, 255, thickness=cv2.FILLED)
+
+    return result
 
 def isolate_field(image, panoptic_cfg, panoptic_predictor):
     '''
@@ -107,13 +139,14 @@ def isolate_field(image, panoptic_cfg, panoptic_predictor):
     erode_box = np.ones((erode_size, erode_size))
 
 
-    field_area = np.where(np.array(panoptic_seg.cpu()) == field_id, 255, 0)
-    field_area = np.array(field_area, np.uint8)
-    field_area = cv2.erode(field_area, erode_box)
-    field_area = cv2.dilate(field_area, dilate_box)
+    field_mask = np.where(np.array(panoptic_seg.cpu()) == field_id, 255, 0)
+    field_mask = np.array(field_mask, np.uint8)
+    field_mask = cv2.erode(field_mask, erode_box)
+    field_mask = cv2.dilate(field_mask, dilate_box)
+    field_mask = remove_blobs(field_mask)
 
     edited_image = image.copy()
-    edited_image[field_area == 0] = 0
+    edited_image[field_mask == 0] = 0
 
     return edited_image
 
@@ -156,6 +189,26 @@ def get_mean_color(image, points: np.array):
     mean_color = cv2.mean(image, mask=mask)[:-1]
     return mean_color
 
+def get_color_list(image, points):
+    pool_size = 10
+    result = []
+
+    mask = np.zeros(image.shape[:2], dtype="uint8")
+    cv2.fillPoly(mask, np.int32([points]), 255)
+
+    # Iterate over the image and mask using the pool size
+    for y in range(0, image.shape[0], pool_size):
+        for x in range(0, image.shape[1], pool_size):
+            # Check if the current region in the mask is non-zero (masked)
+            masked_pixels = np.sum(mask[y:y + pool_size, x:x + pool_size])
+            if masked_pixels > 0:
+                # Calculate the mean color in the region
+                sum_color = np.sum(image[y:y + pool_size, x:x + pool_size], axis=(0, 1))
+                mean_color = sum_color/masked_pixels
+                result.append(mean_color)
+
+    return result
+
 def color_amplify(color_array):
     '''
     color_array: array of BGR colors to be transformed
@@ -181,18 +234,19 @@ def cluster_teams(image_info, eps = 55):
     Uses the DBSCAN clustering model to segregate field players (team1 and 2) and
     other persons (GK, referees and possibly unidentified people)
     '''
-    n_samples = len(image_info['players'])
     image = cv2.imread(image_info['file_name'])
     player_colors = []
+    average_colors = []
     for player in image_info['players']:
         keypoints = player['keypoints']
         points = np.array([keypoints[1], keypoints[2], keypoints[7], keypoints[8]])
-        player_colors.append(get_mean_color(image, points))
+        player_colors += get_color_list(image, points)
+        average_colors.append(get_mean_color(image, points))
 
-    amplified = color_amplify(np.array(player_colors))
+    #amplified = color_amplify(np.array(player_colors))
     db = DBSCAN(eps=eps, min_samples=1)
-    db.fit(amplified)
-    return db.labels_
+    db.fit(color_amplify(np.array(player_colors + average_colors)))
+    return list(db.labels_[-len(average_colors):])
 
 def get_teams(labels):
     '''
@@ -262,7 +316,7 @@ def classify_teams(image_info):
 
 if __name__ == '__main__':
     model = players_classification()
-    filename = './Offside_Images/0.jpg'
+    filename = './teste3.png'
     im_info = model.get_image_info(filename)
     im = model.get_image(im_info)
     cv2.imwrite('./output/output.png', im)
