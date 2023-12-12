@@ -9,3 +9,7 @@ Para detecção de keypoints e classificação de times, utilizar a classe playe
    <br>git clone https://github.com/facebookresearch/detectron2
 3) instalar os pacotes do requirements.txt
 4) executar setup.py
+
+# Execução
+- Para executar detecção de keypoints de classificação de times, utilizar a classe players_classfication, definida no arquivo de mesmo nome
+- Para obter as análises a respeito da detecção de keypoints de classificação de times, acessar arquivo PlayerClassifAnalysis.ipynb
