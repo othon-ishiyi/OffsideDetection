@@ -189,32 +189,6 @@ def get_mean_color(image, points: np.array):
     mean_color = cv2.mean(image, mask=mask)[:-1]
     return mean_color
 
-def get_color_list(image, points):
-    '''
-    image: cv2 image object
-    points: (N,2) array of points
-
-    makes (10,10) average pools on the polygonal region delimited by each player and returns the list of obtained colors
-    '''
-    pool_size = 10
-    result = []
-
-    mask = np.zeros(image.shape[:2], dtype="uint8")
-    cv2.fillPoly(mask, np.int32([points]), 255)
-
-    # Iterate over the image and mask using the pool size
-    for y in range(0, image.shape[0], pool_size):
-        for x in range(0, image.shape[1], pool_size):
-            # Check if the current region in the mask is non-zero (masked)
-            masked_pixels = np.sum(mask[y:y + pool_size, x:x + pool_size])
-            if masked_pixels > 0:
-                # Calculate the mean color in the region
-                sum_color = np.sum(image[y:y + pool_size, x:x + pool_size], axis=(0, 1))
-                mean_color = sum_color/masked_pixels
-                result.append(mean_color)
-
-    return result
-
 def color_amplify(color_array):
     '''
     color_array: array of BGR colors to be transformed
@@ -242,18 +216,16 @@ def cluster_teams(image_info, eps = 55):
     other persons (GK, referees and possibly unidentified people)
     '''
     image = cv2.imread(image_info['file_name'])
-    player_colors = []
     average_colors = []
+
     for player in image_info['players']:
         keypoints = player['keypoints']
         points = np.array([keypoints[1], keypoints[2], keypoints[7], keypoints[8]])
-        player_colors += get_color_list(image, points)
         average_colors.append(get_mean_color(image, points))
 
-    #amplified = color_amplify(np.array(player_colors))
     db = DBSCAN(eps=eps, min_samples=1)
-    db.fit(color_amplify(np.array(player_colors + average_colors)))
-    return list(db.labels_[-len(average_colors):])
+    db.fit(color_amplify(np.array(average_colors)))
+    return list(db.labels_)
 
 def get_teams(labels):
     '''
@@ -323,7 +295,7 @@ def classify_teams(image_info):
 
 if __name__ == '__main__':
     model = players_classification()
-    filename = './teste3.png'
+    filename = './Offside_Images/0.jpg'
     im_info = model.get_image_info(filename)
     im = model.get_image(im_info)
     cv2.imwrite('./output/output.png', im)
