@@ -190,6 +190,12 @@ def get_mean_color(image, points: np.array):
     return mean_color
 
 def get_color_list(image, points):
+    '''
+    image: cv2 image object
+    points: (N,2) array of points
+
+    makes (10,10) average pools on the polygonal region delimited by each player and returns the list of obtained colors
+    '''
     pool_size = 10
     result = []
 
@@ -214,7 +220,8 @@ def color_amplify(color_array):
     color_array: array of BGR colors to be transformed
 
     returns a modified array of BGR colors.
-    The modification involves amplifying the difference between the bigger and the lower BGR component
+    The modification involves amplifying the difference between the bigger and the lower BGR component.
+    This way, visually similar colors will have small euclidean distance.
     '''
 
     sum_colors = np.sum(color_array, axis = 1)[:, None]

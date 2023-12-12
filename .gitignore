@@ -1,6 +1,7 @@
 detectron2/
 
 .venv/
-teste1.png
-teste2.png
-teste3.png
+
+__pycache__/
+
+output/
