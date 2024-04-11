@@ -1,8 +1,8 @@
-# OffsideDetection
+# Relatório
+Disponível em: https://www.overleaf.com/read/qqyqmqrfzzfg#1f9b05
 
-Para detecção de keypoints e classificação de times, utilizar a classe players_classification.
 
-# Setup
+# Setup (desatualizado)
 
 1) Clonar esse repositório
 2) Entrar no diretório do projeto e fazer clone do detectron2:
