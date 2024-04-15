@@ -1,15 +1,15 @@
-# Relatório
-Disponível em: https://www.overleaf.com/read/qqyqmqrfzzfg#1f9b05
+# Project Report (in portuguese)
+Available at: https://www.overleaf.com/read/qqyqmqrfzzfg#1f9b05
 
 
-# Setup (desatualizado)
+# Setup (needs to be updated)
 
-1) Clonar esse repositório
-2) Entrar no diretório do projeto e fazer clone do detectron2:
+1) Clone this repo
+2) Clone detectron2 in the project directoty:
    <br>git clone https://github.com/facebookresearch/detectron2
-3) instalar os pacotes do requirements.txt
-4) executar setup.py
+3) requirements.txt
+4) execute setup.py
 
-# Execução
-- Para executar detecção de keypoints de classificação de times, utilizar a classe players_classfication, definida no arquivo de mesmo nome
-- Para obter as análises a respeito da detecção de keypoints de classificação de times, acessar arquivo PlayerClassifAnalysis.ipynb
+# Execution
+- Use the class player_classification, defined in the file with the same name, in order to detect the teams and the players keypoints
+- The notebook PlayerClassifAnalysis.ipynb contains the results of the players and team classifications
